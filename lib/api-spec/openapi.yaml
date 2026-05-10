@@ -1,22 +1,28 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: AI Home Design API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication operations
+  - name: designs
+    description: Design operations
+  - name: ai
+    description: AI operations
+  - name: projects
+    description: Project operations
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,7 +30,410 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /auth/register:
+    post:
+      operationId: register
+      tags: [auth]
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current user
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /auth/update-profile:
+    put:
+      operationId: updateProfile
+      tags: [auth]
+      summary: Update user profile
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfileInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /designs:
+    get:
+      operationId: getDesigns
+      tags: [designs]
+      summary: Get all user designs (paginated)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DesignListResponse"
+    post:
+      operationId: createDesign
+      tags: [designs]
+      summary: Save a new design
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DesignInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Design"
+
+  /designs/favorites:
+    get:
+      operationId: getFavoriteDesigns
+      tags: [designs]
+      summary: Get all favorited designs
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Design"
+
+  /designs/history:
+    get:
+      operationId: getDesignHistory
+      tags: [designs]
+      summary: Get recent 20 designs
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Design"
+
+  /designs/{id}:
+    get:
+      operationId: getDesign
+      tags: [designs]
+      summary: Get single design
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Design"
+    put:
+      operationId: updateDesign
+      tags: [designs]
+      summary: Update a design
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DesignUpdate"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Design"
+    delete:
+      operationId: deleteDesign
+      tags: [designs]
+      summary: Delete a design
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /designs/{id}/favorite:
+    post:
+      operationId: toggleFavorite
+      tags: [designs]
+      summary: Toggle favorite status
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Design"
+
+  /ai/generate:
+    post:
+      operationId: generateDesign
+      tags: [ai]
+      summary: Generate AI design advice
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AIGenerateInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AIGenerateResponse"
+
+  /ai/tip:
+    post:
+      operationId: getDailyTip
+      tags: [ai]
+      summary: Get daily design tip
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AITipResponse"
+
+  /ai/credits:
+    get:
+      operationId: getCredits
+      tags: [ai]
+      summary: Get remaining AI credits
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreditsResponse"
+
+  /projects:
+    get:
+      operationId: getProjects
+      tags: [projects]
+      summary: Get all user projects
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Project"
+    post:
+      operationId: createProject
+      tags: [projects]
+      summary: Create a new project
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+
+  /projects/{id}:
+    put:
+      operationId: updateProject
+      tags: [projects]
+      summary: Update a project
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectUpdate"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+    delete:
+      operationId: deleteProject
+      tags: [projects]
+      summary: Delete a project
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /projects/{id}/add-design:
+    post:
+      operationId: addDesignToProject
+      tags: [projects]
+      summary: Add design to project
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddDesignInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
   schemas:
     HealthStatus:
       type: object
@@ -34,3 +443,274 @@ components:
       required:
         - status
 
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        avatar:
+          type: ["string", "null"]
+        plan:
+          type: string
+          enum: [free, pro]
+        aiCredits:
+          type: integer
+        createdAt:
+          type: string
+      required:
+        - id
+        - name
+        - email
+        - plan
+        - aiCredits
+        - createdAt
+
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        user:
+          $ref: "#/components/schemas/User"
+      required:
+        - token
+        - user
+
+    RegisterInput:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+      required:
+        - name
+        - email
+        - password
+
+    LoginInput:
+      type: object
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+      required:
+        - email
+        - password
+
+    ProfileInput:
+      type: object
+      properties:
+        name:
+          type: string
+        avatar:
+          type: string
+
+    Design:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        title:
+          type: string
+        featureType:
+          type: string
+        beforeImage:
+          type: ["string", "null"]
+        afterImage:
+          type: ["string", "null"]
+        selectedStyle:
+          type: ["string", "null"]
+        selectedRoom:
+          type: ["string", "null"]
+        aiResponse:
+          type: ["string", "null"]
+        isFavorite:
+          type: boolean
+        tags:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - userId
+        - title
+        - featureType
+        - isFavorite
+        - tags
+        - createdAt
+
+    DesignInput:
+      type: object
+      properties:
+        title:
+          type: string
+        featureType:
+          type: string
+        beforeImage:
+          type: string
+        afterImage:
+          type: string
+        selectedStyle:
+          type: string
+        selectedRoom:
+          type: string
+        aiResponse:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+      required:
+        - title
+        - featureType
+
+    DesignUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+        isFavorite:
+          type: boolean
+        tags:
+          type: array
+          items:
+            type: string
+
+    DesignListResponse:
+      type: object
+      properties:
+        designs:
+          type: array
+          items:
+            $ref: "#/components/schemas/Design"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+      required:
+        - designs
+        - total
+        - page
+        - limit
+
+    AIGenerateInput:
+      type: object
+      properties:
+        featureType:
+          type: string
+        selectedStyle:
+          type: string
+        selectedRoom:
+          type: string
+        prompt:
+          type: string
+      required:
+        - featureType
+        - prompt
+
+    AIGenerateResponse:
+      type: object
+      properties:
+        response:
+          type: string
+        creditsRemaining:
+          type: integer
+      required:
+        - response
+        - creditsRemaining
+
+    AITipResponse:
+      type: object
+      properties:
+        tip:
+          type: string
+      required:
+        - tip
+
+    CreditsResponse:
+      type: object
+      properties:
+        credits:
+          type: integer
+        plan:
+          type: string
+      required:
+        - credits
+        - plan
+
+    Project:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [active, completed]
+        designCount:
+          type: integer
+        createdAt:
+          type: string
+      required:
+        - id
+        - userId
+        - name
+        - status
+        - designCount
+        - createdAt
+
+    ProjectInput:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+      required:
+        - name
+
+    ProjectUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [active, completed]
+
+    AddDesignInput:
+      type: object
+      properties:
+        designId:
+          type: integer
+      required:
+        - designId
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+      required:
+        - success

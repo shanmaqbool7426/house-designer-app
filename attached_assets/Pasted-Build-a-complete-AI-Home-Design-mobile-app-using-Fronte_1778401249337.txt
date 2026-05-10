@@ -1,0 +1,414 @@
+Build a complete AI Home Design mobile app using:
+- Frontend: React Native (Expo)
+- Backend: Node.js + Express
+- Database: MongoDB + Mongoose
+- AI: Anthropic Claude API (claude-sonnet-4-20250514)
+
+═══════════════════════════════════════
+BACKEND (Node + Express + MongoDB)
+═══════════════════════════════════════
+
+FOLDER STRUCTURE:
+/server
+  /models
+    User.js
+    Design.js
+    Project.js
+  /routes
+    auth.js
+    designs.js
+    ai.js
+    projects.js
+  /middleware
+    auth.js
+    upload.js
+  /controllers
+    authController.js
+    designController.js
+    aiController.js
+  server.js
+  .env
+
+─────────────────────────────────────
+MONGODB MODELS:
+─────────────────────────────────────
+
+User.js:
+{
+  name: String,
+  email: { type: String, unique: true },
+  password: String (bcrypt hashed),
+  avatar: String,
+  plan: { type: String, enum: ['free', 'pro'], default: 'free' },
+  aiCredits: { type: Number, default: 10 },
+  savedDesigns: [{ type: ObjectId, ref: 'Design' }],
+  createdAt: Date
+}
+
+Design.js:
+{
+  userId: { type: ObjectId, ref: 'User' },
+  title: String,
+  featureType: {
+    type: String,
+    enum: ['home', 'floor', 'furniture', 'cleanup', 
+           'garden', 'roomdesign', 'objects', 'exterior']
+  },
+  beforeImage: String (URL),
+  afterImage: String (URL),
+  selectedStyle: String,
+  selectedRoom: String,
+  aiResponse: String,
+  isFavorite: { type: Boolean, default: false },
+  tags: [String],
+  createdAt: { type: Date, default: Date.now }
+}
+
+Project.js:
+{
+  userId: { type: ObjectId, ref: 'User' },
+  name: String,
+  description: String,
+  rooms: [{
+    roomType: String,
+    style: String,
+    designs: [{ type: ObjectId, ref: 'Design' }]
+  }],
+  status: { type: String, enum: ['active', 'completed'], default: 'active' },
+  createdAt: Date
+}
+
+─────────────────────────────────────
+EXPRESS ROUTES:
+─────────────────────────────────────
+
+AUTH ROUTES (/api/auth):
+POST /register → create user, return JWT
+POST /login → validate credentials, return JWT
+GET  /me → get current user (protected)
+PUT  /update-profile → update name, avatar
+POST /forgot-password → send reset email
+
+DESIGN ROUTES (/api/designs) [all protected]:
+GET    /          → get all user designs (paginated)
+POST   /          → save new design
+GET    /:id       → get single design
+PUT    /:id       → update design
+DELETE /:id       → delete design
+POST   /:id/favorite → toggle favorite
+GET    /favorites → get all favorited designs
+GET    /history   → get recent 20 designs
+
+AI ROUTES (/api/ai) [protected]:
+POST /generate → call Claude API, deduct credit, save response
+POST /tip       → get daily design tip
+POST /analyze   → analyze uploaded room image
+GET  /credits   → get remaining AI credits
+
+PROJECT ROUTES (/api/projects) [protected]:
+GET    /     → get all user projects
+POST   /     → create new project
+PUT    /:id  → update project
+DELETE /:id  → delete project
+POST   /:id/add-design → add design to project
+
+─────────────────────────────────────
+AI CONTROLLER (aiController.js):
+─────────────────────────────────────
+
+generateDesign(req, res):
+1. Check user has AI credits (return 403 if 0)
+2. Build prompt based on featureType + selectedStyle + selectedRoom
+3. Call Claude API:
+
+const response = await fetch("https://api.anthropic.com/v1/messages", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "x-api-key": process.env.ANTHROPIC_API_KEY,
+    "anthropic-version": "2023-06-01"
+  },
+  body: JSON.stringify({
+    model: "claude-sonnet-4-20250514",
+    max_tokens: 1000,
+    system: "You are an expert interior designer AI. Give specific, actionable design advice in bullet points under 200 words.",
+    messages: [{ role: "user", content: req.body.prompt }]
+  })
+})
+
+4. Deduct 1 credit from user: User.findByIdAndUpdate(userId, { $inc: { aiCredits: -1 }})
+5. Save design to DB with aiResponse
+6. Return response to client
+
+─────────────────────────────────────
+MIDDLEWARE:
+─────────────────────────────────────
+
+auth.js middleware:
+- Verify JWT token from Authorization header
+- Attach user to req.user
+
+upload.js middleware:
+- Use multer + cloudinary for image uploads
+- Accept jpg/png max 5MB
+- Return cloudinary URL
+
+server.js:
+- Express app setup
+- Connect MongoDB with mongoose
+- CORS, helmet, rate limiting (100 req/15min)
+- Mount all routes
+- Error handling middleware
+- Listen on PORT 5000
+
+.env variables:
+MONGODB_URI=
+JWT_SECRET=
+ANTHROPIC_API_KEY=
+CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=
+PORT=5000
+
+═══════════════════════════════════════
+FRONTEND (React Native + Expo)
+═══════════════════════════════════════
+
+FOLDER STRUCTURE:
+/client
+  /src
+    /screens
+      HomeScreen.js
+      AuthScreen.js
+      FeatureScreen.js
+      ProfileScreen.js
+      SavedDesignsScreen.js
+      ProjectsScreen.js
+    /components
+      BeforeAfterSlider.js
+      AIResponseCard.js
+      FeatureCard.js
+      StyleSelector.js
+      ImageUploader.js
+      CreditsBadge.js
+    /navigation
+      AppNavigator.js
+      AuthNavigator.js
+    /context
+      AuthContext.js
+    /services
+      api.js
+      storage.js
+    /constants
+      colors.js
+      features.js
+  App.js
+
+─────────────────────────────────────
+NAVIGATION STRUCTURE:
+─────────────────────────────────────
+
+AuthNavigator (Stack):
+- LoginScreen
+- RegisterScreen
+- ForgotPasswordScreen
+
+AppNavigator (Bottom Tabs):
+- HomeTab (Stack):
+    HomeScreen → FeatureScreen
+- ProjectsTab:
+    ProjectsScreen → ProjectDetailScreen
+- SavedTab:
+    SavedDesignsScreen
+- ProfileTab:
+    ProfileScreen → EditProfileScreen
+
+─────────────────────────────────────
+COLORS (constants/colors.js):
+─────────────────────────────────────
+
+export const COLORS = {
+  bg: '#0D0D0D',
+  card: '#161616',
+  card2: '#1E1E1E',
+  accent: '#FF4C1E',
+  accent2: '#FF8C00',
+  textPrimary: '#F5F5F0',
+  textMuted: '#888884',
+  border: '#2A2A2A',
+  success: '#27AE60',
+  white: '#FFFFFF',
+}
+
+─────────────────────────────────────
+8 FEATURES (constants/features.js):
+─────────────────────────────────────
+
+export const FEATURES = [
+  { id: 'home',       icon: '🏠', title: 'AI Home Design',    color: '#FF4C1E' },
+  { id: 'floor',      icon: '🪵', title: 'Floor Decoration',  color: '#E67E22' },
+  { id: 'furniture',  icon: '🛋️', title: 'Redecor Furniture', color: '#8E44AD' },
+  { id: 'cleanup',    icon: '✨', title: 'Clean Up Room',      color: '#27AE60' },
+  { id: 'garden',     icon: '🌿', title: 'Garden Designs',    color: '#16A085' },
+  { id: 'roomdesign', icon: '🛏️', title: 'Room Design',       color: '#2980B9' },
+  { id: 'objects',    icon: '🔄', title: 'Replace Objects',   color: '#C0392B' },
+  { id: 'exterior',   icon: '🏡', title: 'AI Exterior',       color: '#D35400' },
+]
+
+─────────────────────────────────────
+API SERVICE (services/api.js):
+─────────────────────────────────────
+
+const BASE_URL = 'http://localhost:5000/api'
+
+Store JWT in AsyncStorage on login.
+Add token to every request header:
+Authorization: Bearer <token>
+
+Functions to build:
+- login(email, password)
+- register(name, email, password)
+- generateAI(featureType, style, room, prompt)
+- saveDesign(designData)
+- getDesigns(page, limit)
+- toggleFavorite(designId)
+- uploadImage(imageUri) → multipart/form-data
+- getCredits()
+- getProjects()
+- createProject(data)
+
+─────────────────────────────────────
+SCREENS:
+─────────────────────────────────────
+
+HomeScreen.js:
+- Header with user name + credits badge
+- "Design Tip of the Day" card with refresh button
+  → calls GET /api/ai/tip
+- FlatList of feature cards in 2-column grid
+- Each card shows icon, title, desc, color dot
+- Tap → navigate to FeatureScreen with feature id
+
+FeatureScreen.js:
+- Dynamic header based on feature.id
+- BeforeAfterSlider component (react-native-gesture-handler)
+- StyleSelector component (horizontal ScrollView of pill buttons)
+- Room type selector (for roomdesign feature)
+- Floor material grid (for floor feature)
+- "Generate with AI" button
+  → calls POST /api/ai/generate
+  → shows loading spinner
+  → displays AIResponseCard
+- "Save Design" button → calls POST /api/designs
+- Show remaining credits
+
+BeforeAfterSlider.js:
+- Use react-native-gesture-handler PanGestureHandler
+- Two images with top one clipped using Animated + clip
+- BEFORE / AFTER labels
+- Draggable white divider line with circle handle
+
+AIResponseCard.js:
+- Dark card with orange "✦ AI DESIGN ADVISOR" label
+- Animated 3-dot loader while fetching
+- Display AI text response with good line height
+- Copy to clipboard button
+
+ImageUploader.js:
+- Use expo-image-picker
+- Pick from gallery or camera
+- Upload to server → get cloudinary URL
+- Show thumbnail preview
+
+ProfileScreen.js:
+- User avatar + name + email
+- Credits remaining with progress bar
+- Total designs count
+- Saved favorites count
+- Logout button
+- Upgrade to Pro button (if free plan)
+
+SavedDesignsScreen.js:
+- FlatList of saved designs
+- Filter tabs: All / Favorites / By Room
+- Each item shows thumbnail, title, feature type, date
+- Swipe to delete (react-native-swipeable)
+- Tap to view full design + AI response
+
+─────────────────────────────────────
+AUTH CONTEXT (context/AuthContext.js):
+─────────────────────────────────────
+
+Provide:
+- user object
+- token
+- login(email, password) function
+- register(name, email, password) function  
+- logout() function
+- updateCredits(newCount) function
+- isLoading boolean
+
+Store token in AsyncStorage.
+On app start, check AsyncStorage for token,
+validate with GET /api/auth/me, restore session.
+
+─────────────────────────────────────
+PACKAGES TO INSTALL:
+─────────────────────────────────────
+
+Backend (npm):
+express mongoose bcryptjs jsonwebtoken
+dotenv cors helmet express-rate-limit
+multer cloudinary multer-storage-cloudinary
+nodemon (dev)
+
+Frontend (expo install):
+expo-image-picker expo-file-system
+expo-async-storage @react-native-async-storage/async-storage
+react-native-gesture-handler react-native-reanimated
+@react-navigation/native @react-navigation/stack
+@react-navigation/bottom-tabs
+react-native-safe-area-context
+react-native-screens axios
+
+─────────────────────────────────────
+FEATURE AI PROMPTS (use these in controller):
+─────────────────────────────────────
+
+home:      "Redesign my room in {style} style. Give 5 specific 
+            recommendations: furniture, colors, lighting, decor, layout."
+
+floor:     "I'm installing {floorType} floors. Give advice on:
+            quality grades, installation method, maintenance, best rooms, cost."
+
+furniture: "Rearrange furniture for '{layout}' feel. Give step-by-step
+            placement guide, traffic flow tips, focal point advice."
+
+cleanup:   "Give me a room declutter checklist with 10 specific steps.
+            Include quick wins and how to maintain it long term."
+
+garden:    "Design a {style} garden for a medium backyard. Include:
+            plants list, layout zones, features, seasonal care."
+
+roomdesign:"Design a {style} {roomType}. Give: furniture list with
+            dimensions, color palette HEX codes, lighting plan, budget estimate."
+
+objects:   "Replace my {objectType}. Recommend 5 options:
+            budget under $200, mid-range $200-800, luxury $800+.
+            Include brand names, dimensions, where to buy."
+
+exterior:  "Redesign home exterior in {style}. Cover: siding material,
+            roof style, windows, front door, landscaping, colors, lighting."
+
+═══════════════════════════════════════
+SECURITY & EXTRAS:
+═══════════════════════════════════════
+
+- JWT expires in 7 days, refresh token in 30 days
+- Passwords min 8 chars, hashed with bcrypt (saltRounds: 12)
+- Rate limit AI endpoint: 20 requests/hour per user
+- Validate all inputs with express-validator
+- Free plan: 10 AI credits/day (reset midnight)
+- Pro plan: unlimited credits
+- All API errors return { success: false, message: "..." }
+- All success returns { success: true, data: {...} }
