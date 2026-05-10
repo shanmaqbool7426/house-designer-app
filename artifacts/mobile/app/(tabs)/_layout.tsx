@@ -1,66 +1,43 @@
 import { BlurView } from "expo-blur";
-import { isLiquidGlassAvailable } from "expo-glass-effect";
 import { Tabs } from "expo-router";
-import { Icon, Label, NativeTabs } from "expo-router/unstable-native-tabs";
-import { SymbolView } from "expo-symbols";
 import { Feather } from "@expo/vector-icons";
 import React from "react";
-import { Platform, StyleSheet, View, useColorScheme } from "react-native";
-import { useColors } from "@/hooks/useColors";
+import { Platform, StyleSheet, View } from "react-native";
+import { SymbolView } from "expo-symbols";
 
-function NativeTabLayout() {
-  return (
-    <NativeTabs>
-      <NativeTabs.Trigger name="index">
-        <Icon sf={{ default: "house", selected: "house.fill" }} />
-        <Label>Home</Label>
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="projects">
-        <Icon sf={{ default: "folder", selected: "folder.fill" }} />
-        <Label>Projects</Label>
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="saved">
-        <Icon sf={{ default: "heart", selected: "heart.fill" }} />
-        <Label>Saved</Label>
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="profile">
-        <Icon sf={{ default: "person", selected: "person.fill" }} />
-        <Label>Profile</Label>
-      </NativeTabs.Trigger>
-    </NativeTabs>
-  );
-}
+const ACCENT = "#FF4C1E";
+const INACTIVE = "#BBBAB6";
+const TAB_BG = "#FFFFFF";
+const BORDER = "#EDEAE4";
 
-function ClassicTabLayout() {
-  const colors = useColors();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
+export default function TabLayout() {
   const isIOS = Platform.OS === "ios";
   const isWeb = Platform.OS === "web";
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.mutedForeground,
+        tabBarActiveTintColor: ACCENT,
+        tabBarInactiveTintColor: INACTIVE,
         headerShown: false,
         tabBarStyle: {
           position: "absolute",
-          backgroundColor: isIOS ? "transparent" : colors.card,
+          backgroundColor: isIOS ? "transparent" : TAB_BG,
           borderTopWidth: 1,
-          borderTopColor: colors.border,
+          borderTopColor: BORDER,
           elevation: 0,
+          shadowColor: "#00000015",
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 1,
+          shadowRadius: 8,
           ...(isWeb ? { height: 84 } : {}),
         },
+        tabBarLabelStyle: { fontSize: 11, fontFamily: "Inter_500Medium" },
         tabBarBackground: () =>
           isIOS ? (
-            <BlurView
-              intensity={80}
-              tint={isDark ? "dark" : "dark"}
-              style={StyleSheet.absoluteFill}
-            />
+            <BlurView intensity={60} tint="light" style={StyleSheet.absoluteFill} />
           ) : isWeb ? (
-            <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.card }]} />
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: TAB_BG }]} />
           ) : null,
       }}
     >
@@ -70,7 +47,7 @@ function ClassicTabLayout() {
           title: "Home",
           tabBarIcon: ({ color }) =>
             isIOS ? (
-              <SymbolView name="house" tintColor={color} size={24} />
+              <SymbolView name="house" tintColor={color} size={22} />
             ) : (
               <Feather name="home" size={22} color={color} />
             ),
@@ -82,7 +59,7 @@ function ClassicTabLayout() {
           title: "Projects",
           tabBarIcon: ({ color }) =>
             isIOS ? (
-              <SymbolView name="folder" tintColor={color} size={24} />
+              <SymbolView name="folder" tintColor={color} size={22} />
             ) : (
               <Feather name="folder" size={22} color={color} />
             ),
@@ -94,7 +71,7 @@ function ClassicTabLayout() {
           title: "Saved",
           tabBarIcon: ({ color }) =>
             isIOS ? (
-              <SymbolView name="heart" tintColor={color} size={24} />
+              <SymbolView name="heart" tintColor={color} size={22} />
             ) : (
               <Feather name="heart" size={22} color={color} />
             ),
@@ -106,7 +83,7 @@ function ClassicTabLayout() {
           title: "Profile",
           tabBarIcon: ({ color }) =>
             isIOS ? (
-              <SymbolView name="person" tintColor={color} size={24} />
+              <SymbolView name="person" tintColor={color} size={22} />
             ) : (
               <Feather name="user" size={22} color={color} />
             ),
@@ -114,11 +91,4 @@ function ClassicTabLayout() {
       />
     </Tabs>
   );
-}
-
-export default function TabLayout() {
-  if (isLiquidGlassAvailable()) {
-    return <NativeTabLayout />;
-  }
-  return <ClassicTabLayout />;
 }

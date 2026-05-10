@@ -34,9 +34,10 @@ function RootLayoutNav() {
         name="feature/[id]"
         options={{
           headerShown: true,
-          headerStyle: { backgroundColor: "#0D0D0D" },
-          headerTintColor: "#F5F5F0",
+          headerStyle: { backgroundColor: "#F8F6F2" },
+          headerTintColor: "#1A1A18",
           headerBackTitle: "Back",
+          headerShadowVisible: false,
           presentation: "card",
         }}
       />
@@ -44,9 +45,10 @@ function RootLayoutNav() {
         name="design/[id]"
         options={{
           headerShown: true,
-          headerStyle: { backgroundColor: "#0D0D0D" },
-          headerTintColor: "#F5F5F0",
+          headerStyle: { backgroundColor: "#F8F6F2" },
+          headerTintColor: "#1A1A18",
           headerBackTitle: "Back",
+          headerShadowVisible: false,
           presentation: "card",
         }}
       />

@@ -1,14 +1,7 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState } from "react";
 import {
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  StyleSheet,
-  Alert,
-  ActivityIndicator,
-  Animated,
-  Platform,
+  View, Text, FlatList, TouchableOpacity, StyleSheet,
+  Alert, ActivityIndicator, Platform,
 } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -17,79 +10,27 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useGetDesigns, useGetFavoriteDesigns, useDeleteDesign, useToggleFavorite } from "@workspace/api-client-react";
 import type { Design } from "@workspace/api-client-react";
 
+const BG = "#F8F6F2";
+const CARD = "#FFFFFF";
+const BORDER = "#EDEAE4";
+const TEXT = "#1A1A18";
+const MUTED = "#6E6B67";
+const DIM = "#BBBAB6";
+const ACCENT = "#FF4C1E";
+
 const FILTER_TABS = ["All", "Favorites"] as const;
 type FilterTab = typeof FILTER_TABS[number];
 
 const FEATURE_META: Record<string, { color: string; icon: keyof typeof Feather.glyphMap; label: string }> = {
   home: { color: "#FF4C1E", icon: "home", label: "Home Design" },
-  floor: { color: "#E67E22", icon: "grid", label: "Floor Decoration" },
+  floor: { color: "#E67E22", icon: "grid", label: "Floor Decor" },
   furniture: { color: "#8E44AD", icon: "package", label: "Furniture" },
-  cleanup: { color: "#27AE60", icon: "wind", label: "Room Cleanup" },
+  cleanup: { color: "#27AE60", icon: "wind", label: "Cleanup" },
   garden: { color: "#16A085", icon: "feather", label: "Garden" },
   roomdesign: { color: "#2980B9", icon: "layers", label: "Room Design" },
   objects: { color: "#C0392B", icon: "refresh-cw", label: "Objects" },
   exterior: { color: "#D35400", icon: "sun", label: "Exterior" },
 };
-
-function DesignCard({ item, onPress, onFavorite, onDelete }: {
-  item: Design;
-  onPress: () => void;
-  onFavorite: () => Promise<void>;
-  onDelete: () => void;
-}) {
-  const meta = FEATURE_META[item.featureType] ?? { color: "#FF4C1E", icon: "layers" as const, label: item.featureType };
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-
-  function onPressIn() {
-    Animated.spring(scaleAnim, { toValue: 0.97, useNativeDriver: true, friction: 10 }).start();
-  }
-  function onPressOut() {
-    Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: true, friction: 6 }).start();
-  }
-
-  return (
-    <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
-      <TouchableOpacity
-        style={styles.designCard}
-        onPress={onPress}
-        onPressIn={onPressIn}
-        onPressOut={onPressOut}
-        activeOpacity={1}
-      >
-        <LinearGradient
-          colors={[meta.color + "18", "#111111"]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={styles.designCardGradient}
-        >
-          <View style={[styles.designIcon, { backgroundColor: meta.color + "30" }]}>
-            <Feather name={meta.icon} size={18} color={meta.color} />
-          </View>
-          <View style={styles.designInfo}>
-            <Text style={styles.designTitle} numberOfLines={1}>{item.title}</Text>
-            <View style={styles.designMeta}>
-              <View style={[styles.featureTag, { backgroundColor: meta.color + "22" }]}>
-                <Text style={[styles.featureTagText, { color: meta.color }]}>{meta.label}</Text>
-              </View>
-              {item.selectedStyle ? (
-                <Text style={styles.designStyle}>{item.selectedStyle}</Text>
-              ) : null}
-            </View>
-            <Text style={styles.designDate}>{new Date(item.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</Text>
-          </View>
-          <View style={styles.designActions}>
-            <TouchableOpacity onPress={() => void onFavorite()} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} style={styles.actionBtn}>
-              <Feather name={item.isFavorite ? "heart" : "heart"} size={17} color={item.isFavorite ? "#FF4C1E" : "#555552"} />
-            </TouchableOpacity>
-            <TouchableOpacity onPress={onDelete} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} style={styles.actionBtn}>
-              <Feather name="trash-2" size={15} color="#555552" />
-            </TouchableOpacity>
-          </View>
-        </LinearGradient>
-      </TouchableOpacity>
-    </Animated.View>
-  );
-}
 
 export default function SavedScreen() {
   const insets = useSafeAreaInsets();
@@ -101,18 +42,17 @@ export default function SavedScreen() {
   const toggleMutation = useToggleFavorite();
 
   const isLoading = filter === "All" ? allLoading : favLoading;
-  const rawDesigns = filter === "All" ? (allDesigns?.designs ?? []) : (favDesigns ?? []);
+  const designs = (filter === "All" ? allDesigns?.designs : favDesigns) ?? [];
+  const topPad = insets.top + (Platform.OS === "web" ? 67 : 0);
 
   async function handleDelete(item: Design) {
     Alert.alert("Delete Design", `Delete "${item.title}"?`, [
       { text: "Cancel", style: "cancel" },
       {
-        text: "Delete",
-        style: "destructive",
+        text: "Delete", style: "destructive",
         onPress: async () => {
           await deleteMutation.mutateAsync({ id: String(item.id) });
-          void refetchAll();
-          void refetchFav();
+          void refetchAll(); void refetchFav();
         },
       },
     ]);
@@ -120,18 +60,15 @@ export default function SavedScreen() {
 
   async function handleToggle(id: number) {
     await toggleMutation.mutateAsync({ id: String(id) });
-    void refetchAll();
-    void refetchFav();
+    void refetchAll(); void refetchFav();
   }
-
-  const topPad = insets.top + (Platform.OS === "web" ? 67 : 0);
 
   return (
     <View style={[styles.root, { paddingTop: topPad }]}>
       <View style={styles.header}>
         <View>
           <Text style={styles.title}>Saved Designs</Text>
-          <Text style={styles.subtitle}>{allDesigns?.total ?? 0} designs saved</Text>
+          <Text style={styles.subtitle}>{allDesigns?.total ?? 0} saved</Text>
         </View>
       </View>
 
@@ -144,9 +81,8 @@ export default function SavedScreen() {
             activeOpacity={0.8}
           >
             {filter === tab ? (
-              <LinearGradient colors={["#FF4C1E", "#FF6B35"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.filterTabGradient}>
+              <LinearGradient colors={["#FF4C1E", "#FF6B35"]} style={styles.filterGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
                 <Text style={styles.filterTextActive}>{tab}</Text>
-                {tab === "Favorites" && <Feather name="heart" size={12} color="#fff" />}
               </LinearGradient>
             ) : (
               <Text style={styles.filterText}>{tab}</Text>
@@ -157,45 +93,66 @@ export default function SavedScreen() {
 
       {isLoading ? (
         <View style={styles.loadingState}>
-          <ActivityIndicator color="#FF4C1E" />
-          <Text style={styles.loadingText}>Loading designs...</Text>
+          <ActivityIndicator color={ACCENT} />
         </View>
       ) : (
         <FlatList
-          data={rawDesigns as Design[]}
+          data={designs as Design[]}
           keyExtractor={(item) => String(item.id)}
           contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: insets.bottom + 110 }}
           showsVerticalScrollIndicator={false}
           ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
           ListEmptyComponent={
-            <View style={styles.emptyState}>
-              <LinearGradient colors={["#FF4C1E11", "#0D0D0D"]} style={styles.emptyIconBg}>
-                <Feather name="heart" size={32} color="#FF4C1E44" />
-              </LinearGradient>
+            <View style={styles.empty}>
+              <View style={styles.emptyIcon}>
+                <Feather name="heart" size={28} color={DIM} />
+              </View>
               <Text style={styles.emptyTitle}>{filter === "Favorites" ? "No favorites yet" : "No designs yet"}</Text>
               <Text style={styles.emptyText}>
-                {filter === "Favorites"
-                  ? "Heart designs to save them as favorites"
-                  : "Use any design tool to create and save designs"}
+                {filter === "Favorites" ? "Heart designs to add them here" : "Use a design tool to create your first AI design"}
               </Text>
               {filter === "All" && (
-                <TouchableOpacity style={styles.emptyButton} onPress={() => router.push("/(tabs)")} activeOpacity={0.8}>
-                  <LinearGradient colors={["#FF4C1E", "#FF6B35"]} style={styles.emptyButtonGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
-                    <Text style={styles.emptyButtonText}>Start Designing</Text>
+                <TouchableOpacity onPress={() => router.push("/(tabs)")} style={styles.emptyBtn}>
+                  <LinearGradient colors={["#FF4C1E", "#FF6B35"]} style={styles.emptyBtnInner} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
+                    <Text style={styles.emptyBtnText}>Start Designing</Text>
                     <Feather name="arrow-right" size={14} color="#fff" />
                   </LinearGradient>
                 </TouchableOpacity>
               )}
             </View>
           }
-          renderItem={({ item }) => (
-            <DesignCard
-              item={item as Design}
-              onPress={() => router.push({ pathname: "/design/[id]", params: { id: String(item.id) } })}
-              onFavorite={() => handleToggle(item.id)}
-              onDelete={() => void handleDelete(item as Design)}
-            />
-          )}
+          renderItem={({ item }) => {
+            const meta = FEATURE_META[item.featureType] ?? { color: ACCENT, icon: "layers" as const, label: item.featureType };
+            return (
+              <TouchableOpacity
+                style={styles.designCard}
+                onPress={() => router.push({ pathname: "/design/[id]", params: { id: String(item.id) } })}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.designIcon, { backgroundColor: meta.color + "18" }]}>
+                  <Feather name={meta.icon} size={18} color={meta.color} />
+                </View>
+                <View style={styles.designInfo}>
+                  <Text style={styles.designTitle} numberOfLines={1}>{item.title}</Text>
+                  <View style={styles.designMeta}>
+                    <View style={[styles.featureTag, { backgroundColor: meta.color + "15" }]}>
+                      <Text style={[styles.featureTagText, { color: meta.color }]}>{meta.label}</Text>
+                    </View>
+                    {item.selectedStyle ? <Text style={styles.designStyle}>{item.selectedStyle}</Text> : null}
+                  </View>
+                  <Text style={styles.designDate}>{new Date(item.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</Text>
+                </View>
+                <View style={styles.designActions}>
+                  <TouchableOpacity onPress={() => void handleToggle(item.id)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                    <Feather name="heart" size={17} color={item.isFavorite ? ACCENT : DIM} />
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => void handleDelete(item as Design)} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                    <Feather name="trash-2" size={15} color={DIM} />
+                  </TouchableOpacity>
+                </View>
+              </TouchableOpacity>
+            );
+          }}
         />
       )}
     </View>
@@ -203,41 +160,47 @@ export default function SavedScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: "#0D0D0D" },
-  header: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12, flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end" },
-  title: { fontSize: 26, fontWeight: "700", color: "#F5F5F0", fontFamily: "Inter_700Bold" },
-  subtitle: { fontSize: 13, color: "#555552", fontFamily: "Inter_400Regular", marginTop: 2 },
+  root: { flex: 1, backgroundColor: BG },
+  header: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12 },
+  title: { fontSize: 26, fontWeight: "700", color: TEXT, fontFamily: "Inter_700Bold" },
+  subtitle: { fontSize: 13, color: DIM, fontFamily: "Inter_400Regular", marginTop: 2 },
   filterRow: { flexDirection: "row", paddingHorizontal: 20, gap: 8, marginBottom: 16 },
   filterTab: {
-    borderRadius: 22,
-    backgroundColor: "#161616",
-    borderWidth: 1,
-    borderColor: "#242424",
-    overflow: "hidden",
+    borderRadius: 22, backgroundColor: CARD, borderWidth: 1, borderColor: BORDER, overflow: "hidden",
+    shadowColor: "#00000010", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 1, shadowRadius: 4, elevation: 1,
   },
-  filterTabActive: { borderColor: "#FF4C1E" },
-  filterTabGradient: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 16, paddingVertical: 8 },
-  filterText: { color: "#888884", fontSize: 13, fontFamily: "Inter_500Medium", paddingHorizontal: 16, paddingVertical: 8 },
+  filterTabActive: { borderColor: ACCENT },
+  filterGradient: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 16, paddingVertical: 8 },
+  filterText: { color: MUTED, fontSize: 13, fontFamily: "Inter_500Medium", paddingHorizontal: 16, paddingVertical: 8 },
   filterTextActive: { color: "#fff", fontSize: 13, fontFamily: "Inter_600SemiBold" },
-  loadingState: { flex: 1, alignItems: "center", justifyContent: "center", gap: 12 },
-  loadingText: { color: "#555552", fontFamily: "Inter_400Regular" },
-  emptyState: { alignItems: "center", paddingTop: 60, gap: 12 },
-  emptyIconBg: { width: 80, height: 80, borderRadius: 24, alignItems: "center", justifyContent: "center" },
-  emptyTitle: { fontSize: 18, fontWeight: "700", color: "#F5F5F0", fontFamily: "Inter_700Bold" },
-  emptyText: { fontSize: 13, color: "#888884", fontFamily: "Inter_400Regular", textAlign: "center", lineHeight: 20, paddingHorizontal: 24 },
-  emptyButton: { borderRadius: 12, overflow: "hidden", marginTop: 8 },
-  emptyButtonGradient: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 24, paddingVertical: 12 },
-  emptyButtonText: { color: "#fff", fontFamily: "Inter_600SemiBold", fontSize: 14 },
-  designCard: { borderRadius: 16, overflow: "hidden", borderWidth: 1, borderColor: "#242424" },
-  designCardGradient: { flexDirection: "row", alignItems: "center", padding: 14, gap: 12 },
+  loadingState: { flex: 1, alignItems: "center", justifyContent: "center" },
+  empty: { alignItems: "center", paddingTop: 64, gap: 10 },
+  emptyIcon: {
+    width: 72, height: 72, borderRadius: 22, backgroundColor: CARD,
+    alignItems: "center", justifyContent: "center",
+    borderWidth: 1, borderColor: BORDER,
+    shadowColor: "#00000010", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 1, shadowRadius: 8, elevation: 2,
+    marginBottom: 4,
+  },
+  emptyTitle: { fontSize: 17, fontWeight: "700", color: TEXT, fontFamily: "Inter_700Bold" },
+  emptyText: { fontSize: 13, color: MUTED, fontFamily: "Inter_400Regular", textAlign: "center", paddingHorizontal: 32, lineHeight: 20 },
+  emptyBtn: { borderRadius: 12, overflow: "hidden", marginTop: 8 },
+  emptyBtnInner: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 24, paddingVertical: 12 },
+  emptyBtnText: { color: "#fff", fontFamily: "Inter_600SemiBold", fontSize: 14 },
+  designCard: {
+    flexDirection: "row", alignItems: "center", backgroundColor: CARD,
+    borderRadius: 16, padding: 14, gap: 12,
+    borderWidth: 1, borderColor: BORDER,
+    shadowColor: "#00000010", shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 1, shadowRadius: 8, elevation: 2,
+  },
   designIcon: { width: 46, height: 46, borderRadius: 14, alignItems: "center", justifyContent: "center", flexShrink: 0 },
   designInfo: { flex: 1, gap: 4 },
-  designTitle: { fontSize: 14, fontWeight: "600", color: "#F5F5F0", fontFamily: "Inter_600SemiBold" },
-  designMeta: { flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" },
+  designTitle: { fontSize: 14, fontWeight: "600", color: TEXT, fontFamily: "Inter_600SemiBold" },
+  designMeta: { flexDirection: "row", alignItems: "center", gap: 6 },
   featureTag: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 20 },
   featureTagText: { fontSize: 11, fontFamily: "Inter_500Medium" },
-  designStyle: { fontSize: 11, color: "#888884", fontFamily: "Inter_400Regular" },
-  designDate: { fontSize: 11, color: "#555552", fontFamily: "Inter_400Regular" },
-  designActions: { gap: 14, alignItems: "center", flexShrink: 0 },
-  actionBtn: { padding: 2 },
+  designStyle: { fontSize: 11, color: MUTED, fontFamily: "Inter_400Regular" },
+  designDate: { fontSize: 11, color: DIM, fontFamily: "Inter_400Regular" },
+  designActions: { gap: 14, alignItems: "center" },
 });

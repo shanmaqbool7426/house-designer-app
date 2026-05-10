@@ -14,16 +14,14 @@ export default function RootIndex() {
     );
   }
 
-  if (user) {
-    return <Redirect href="/(tabs)" />;
-  }
+  if (user) return <Redirect href="/(tabs)" />;
   return <Redirect href="/(auth)/login" />;
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0D0D0D",
+    backgroundColor: "#F8F6F2",
     alignItems: "center",
     justifyContent: "center",
   },

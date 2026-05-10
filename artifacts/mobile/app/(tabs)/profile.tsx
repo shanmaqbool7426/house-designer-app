@@ -1,18 +1,20 @@
 import React from "react";
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Alert,
-  ScrollView,
-  Platform,
+  View, Text, TouchableOpacity, StyleSheet, Alert, ScrollView, Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useAuth } from "@/context/AuthContext";
 import { useGetDesigns, useGetFavoriteDesigns, useGetCredits } from "@workspace/api-client-react";
+
+const BG = "#F8F6F2";
+const CARD = "#FFFFFF";
+const BORDER = "#EDEAE4";
+const TEXT = "#1A1A18";
+const MUTED = "#6E6B67";
+const DIM = "#BBBAB6";
+const ACCENT = "#FF4C1E";
 
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
@@ -27,8 +29,8 @@ export default function ProfileScreen() {
   const maxCredits = 10;
   const creditPct = Math.min(remainingCredits / maxCredits, 1);
   const isPro = user?.plan === "pro";
-
   const initials = (user?.name ?? "U").split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
+  const topPad = insets.top + (Platform.OS === "web" ? 67 : 0);
 
   function handleLogout() {
     Alert.alert("Sign Out", "Are you sure you want to sign out?", [
@@ -37,41 +39,28 @@ export default function ProfileScreen() {
     ]);
   }
 
-  const topPad = insets.top + (Platform.OS === "web" ? 67 : 0);
-
   return (
     <ScrollView
       style={styles.root}
       contentContainerStyle={[styles.container, { paddingTop: topPad + 16, paddingBottom: insets.bottom + 110 }]}
       showsVerticalScrollIndicator={false}
     >
-      <LinearGradient
-        colors={isPro ? ["#FF8C0015", "#FF4C1E10", "#0D0D0D"] : ["#FF4C1E10", "#0D0D0D"]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
-        style={styles.avatarSection}
-      >
-        <View style={styles.avatarOuter}>
-          <LinearGradient colors={["#FF4C1E", "#FF8C00"]} style={styles.avatarCircle} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
-            <Text style={styles.avatarText}>{initials}</Text>
+      <View style={styles.avatarSection}>
+        <LinearGradient colors={["#FF4C1E", "#FF7A45"]} style={styles.avatarCircle}>
+          <Text style={styles.avatarText}>{initials}</Text>
+        </LinearGradient>
+        {isPro && (
+          <LinearGradient colors={["#FF8C00", "#FF4C1E"]} style={styles.proRing}>
+            <Feather name="star" size={9} color="#fff" />
           </LinearGradient>
-          {isPro && (
-            <View style={styles.proRing}>
-              <LinearGradient colors={["#FF8C00", "#FF4C1E"]} style={styles.proRingInner}>
-                <Feather name="star" size={9} color="#fff" />
-              </LinearGradient>
-            </View>
-          )}
-        </View>
+        )}
         <Text style={styles.userName}>{user?.name}</Text>
         <Text style={styles.userEmail}>{user?.email}</Text>
-        <View style={[styles.planBadge, isPro ? styles.planProBadge : styles.planFreeBadge]}>
-          <Feather name={isPro ? "star" : "zap"} size={11} color={isPro ? "#FF8C00" : "#888884"} />
-          <Text style={[styles.planText, { color: isPro ? "#FF8C00" : "#888884" }]}>
-            {isPro ? "Pro Plan" : "Free Plan"}
-          </Text>
+        <View style={[styles.planBadge, isPro ? styles.planPro : styles.planFree]}>
+          <Feather name={isPro ? "star" : "zap"} size={11} color={isPro ? "#FF8C00" : MUTED} />
+          <Text style={[styles.planText, { color: isPro ? "#FF8C00" : MUTED }]}>{isPro ? "Pro Plan" : "Free Plan"}</Text>
         </View>
-      </LinearGradient>
+      </View>
 
       <View style={styles.statsRow}>
         {[
@@ -79,8 +68,8 @@ export default function ProfileScreen() {
           { value: totalFavorites, label: "Favorites", icon: "heart" as const },
           { value: remainingCredits, label: "Credits", icon: "zap" as const },
         ].map(({ value, label, icon }, i) => (
-          <View key={label} style={[styles.statCard, i === 1 && styles.statCardMiddle]}>
-            <Feather name={icon} size={14} color="#FF4C1E" style={{ marginBottom: 6 }} />
+          <View key={label} style={[styles.statCard, i === 1 && styles.statMiddle]}>
+            <Feather name={icon} size={14} color={ACCENT} style={{ marginBottom: 6 }} />
             <Text style={styles.statValue}>{value}</Text>
             <Text style={styles.statLabel}>{label}</Text>
           </View>
@@ -89,49 +78,41 @@ export default function ProfileScreen() {
 
       {!isPro && (
         <View style={styles.creditsCard}>
-          <View style={styles.creditsHeader}>
+          <View style={styles.creditsTop}>
             <View style={styles.creditsLeft}>
-              <Feather name="zap" size={15} color="#FF8C00" />
+              <Feather name="zap" size={14} color="#FF8C00" />
               <Text style={styles.creditsLabel}>Daily AI Credits</Text>
             </View>
             <Text style={styles.creditsCount}>
               <Text style={{ color: remainingCredits <= 2 ? "#C0392B" : "#FF8C00" }}>{remainingCredits}</Text>
-              <Text style={{ color: "#555552" }}>/{maxCredits}</Text>
+              <Text style={{ color: DIM }}>/{maxCredits}</Text>
             </Text>
           </View>
           <View style={styles.progressBg}>
             <LinearGradient
-              colors={remainingCredits <= 2 ? ["#C0392B", "#FF4C1E"] : ["#FF8C00", "#FF4C1E"]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
+              colors={remainingCredits <= 2 ? ["#C0392B", "#E74C3C"] : ["#FF8C00", "#FF4C1E"]}
               style={[styles.progressFill, { width: `${creditPct * 100}%` }]}
+              start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
             />
           </View>
-          <Text style={styles.creditsHint}>Resets daily at midnight · {remainingCredits} remaining today</Text>
+          <Text style={styles.creditsHint}>Resets daily at midnight</Text>
         </View>
       )}
 
       {!isPro && (
-        <TouchableOpacity style={styles.upgradeCard} activeOpacity={0.9}>
-          <LinearGradient
-            colors={["#FF8C0015", "#FF4C1E15"]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.upgradeGradient}
-          >
+        <TouchableOpacity style={styles.upgradeCard} activeOpacity={0.88}>
+          <LinearGradient colors={["#FF4C1E", "#FF7A45"]} style={styles.upgradeGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
             <View style={styles.upgradeLeft}>
-              <LinearGradient colors={["#FF8C00", "#FF4C1E"]} style={styles.upgradeIconBg}>
-                <Feather name="star" size={18} color="#fff" />
-              </LinearGradient>
+              <View style={styles.upgradeIconBg}>
+                <Feather name="star" size={18} color="#FF8C00" />
+              </View>
               <View>
                 <Text style={styles.upgradeTitle}>Upgrade to Pro</Text>
-                <Text style={styles.upgradeDesc}>Unlimited credits · Priority AI access</Text>
+                <Text style={styles.upgradeDesc}>Unlimited AI credits · Priority access</Text>
               </View>
             </View>
-            <View style={styles.upgradeButtonWrap}>
-              <LinearGradient colors={["#FF8C00", "#FF4C1E"]} style={styles.upgradeButton} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
-                <Text style={styles.upgradeButtonText}>Go Pro</Text>
-              </LinearGradient>
+            <View style={styles.upgradeArrow}>
+              <Feather name="arrow-right" size={16} color="#fff" />
             </View>
           </LinearGradient>
         </TouchableOpacity>
@@ -147,13 +128,13 @@ export default function ProfileScreen() {
         ].map(({ icon, label, sub }) => (
           <TouchableOpacity key={label} style={styles.menuItem} activeOpacity={0.7}>
             <View style={styles.menuIconBg}>
-              <Feather name={icon} size={15} color="#888884" />
+              <Feather name={icon} size={15} color={MUTED} />
             </View>
-            <View style={styles.menuTextGroup}>
+            <View style={styles.menuText}>
               <Text style={styles.menuLabel}>{label}</Text>
               <Text style={styles.menuSub}>{sub}</Text>
             </View>
-            <Feather name="chevron-right" size={15} color="#2A2A2A" />
+            <Feather name="chevron-right" size={15} color={BORDER} />
           </TouchableOpacity>
         ))}
       </View>
@@ -163,7 +144,7 @@ export default function ProfileScreen() {
         <Text style={styles.appVersion}>v1.0.0</Text>
       </View>
 
-      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} activeOpacity={0.8}>
+      <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout} activeOpacity={0.8}>
         <Feather name="log-out" size={16} color="#C0392B" />
         <Text style={styles.logoutText}>Sign Out</Text>
       </TouchableOpacity>
@@ -172,72 +153,84 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: "#0D0D0D" },
+  root: { flex: 1, backgroundColor: BG },
   container: { paddingHorizontal: 20 },
-  avatarSection: { alignItems: "center", marginBottom: 24, borderRadius: 20, padding: 24, borderWidth: 1, borderColor: "#242424" },
-  avatarOuter: { position: "relative", marginBottom: 14 },
-  avatarCircle: { width: 84, height: 84, borderRadius: 42, alignItems: "center", justifyContent: "center" },
-  avatarText: { fontSize: 30, fontWeight: "700", color: "#fff", fontFamily: "Inter_700Bold" },
-  proRing: { position: "absolute", bottom: 0, right: 0, borderRadius: 12, overflow: "hidden" },
-  proRingInner: { width: 22, height: 22, alignItems: "center", justifyContent: "center", borderRadius: 11, borderWidth: 2, borderColor: "#0D0D0D" },
-  userName: { fontSize: 22, fontWeight: "700", color: "#F5F5F0", fontFamily: "Inter_700Bold", marginBottom: 4 },
-  userEmail: { fontSize: 13, color: "#888884", fontFamily: "Inter_400Regular", marginBottom: 12 },
-  planBadge: { flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 12, paddingVertical: 5, borderRadius: 20 },
-  planFreeBadge: { backgroundColor: "#1A1A1A", borderWidth: 1, borderColor: "#242424" },
-  planProBadge: { backgroundColor: "#FF8C0020", borderWidth: 1, borderColor: "#FF8C0050" },
-  planText: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
-  statsRow: { flexDirection: "row", backgroundColor: "#111111", borderRadius: 18, borderWidth: 1, borderColor: "#242424", marginBottom: 16, overflow: "hidden" },
-  statCard: { flex: 1, alignItems: "center", paddingVertical: 18 },
-  statCardMiddle: { borderLeftWidth: 1, borderRightWidth: 1, borderColor: "#242424" },
-  statValue: { fontSize: 24, fontWeight: "700", color: "#F5F5F0", fontFamily: "Inter_700Bold" },
-  statLabel: { fontSize: 12, color: "#555552", fontFamily: "Inter_400Regular", marginTop: 2 },
-  creditsCard: { backgroundColor: "#111111", borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: "#242424" },
-  creditsHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
-  creditsLeft: { flexDirection: "row", alignItems: "center", gap: 7 },
-  creditsLabel: { color: "#F5F5F0", fontFamily: "Inter_600SemiBold", fontSize: 14 },
-  creditsCount: { fontFamily: "Inter_600SemiBold", fontSize: 14 },
-  progressBg: { height: 6, backgroundColor: "#1E1E1E", borderRadius: 3, overflow: "hidden", marginBottom: 8 },
-  progressFill: { height: "100%", borderRadius: 3 },
-  creditsHint: { color: "#555552", fontSize: 11, fontFamily: "Inter_400Regular" },
-  upgradeCard: { borderRadius: 16, overflow: "hidden", marginBottom: 24, borderWidth: 1, borderColor: "#FF8C0030" },
-  upgradeGradient: { padding: 16, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  upgradeLeft: { flexDirection: "row", alignItems: "center", gap: 12, flex: 1 },
-  upgradeIconBg: { width: 42, height: 42, borderRadius: 12, alignItems: "center", justifyContent: "center" },
-  upgradeTitle: { fontSize: 15, fontWeight: "600", color: "#F5F5F0", fontFamily: "Inter_600SemiBold" },
-  upgradeDesc: { fontSize: 12, color: "#888884", fontFamily: "Inter_400Regular", marginTop: 2 },
-  upgradeButtonWrap: { borderRadius: 10, overflow: "hidden" },
-  upgradeButton: { paddingHorizontal: 16, paddingVertical: 8 },
-  upgradeButtonText: { color: "#fff", fontFamily: "Inter_700Bold", fontSize: 13 },
-  section: { marginBottom: 20 },
-  sectionTitle: { fontSize: 13, color: "#555552", fontFamily: "Inter_500Medium", marginBottom: 10, textTransform: "uppercase", letterSpacing: 0.8 },
-  menuItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#111111",
-    borderRadius: 14,
-    padding: 14,
-    marginBottom: 6,
-    borderWidth: 1,
-    borderColor: "#242424",
-    gap: 12,
+  avatarSection: { alignItems: "center", marginBottom: 24, position: "relative" },
+  avatarCircle: {
+    width: 84, height: 84, borderRadius: 42,
+    alignItems: "center", justifyContent: "center", marginBottom: 14,
+    shadowColor: "#FF4C1E50", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 1, shadowRadius: 16, elevation: 8,
   },
-  menuIconBg: { width: 34, height: 34, borderRadius: 10, backgroundColor: "#1A1A1A", alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "#2A2A2A" },
-  menuTextGroup: { flex: 1 },
-  menuLabel: { fontSize: 14, color: "#F5F5F0", fontFamily: "Inter_500Medium" },
-  menuSub: { fontSize: 11, color: "#555552", fontFamily: "Inter_400Regular", marginTop: 1 },
+  avatarText: { fontSize: 30, fontWeight: "700", color: "#fff", fontFamily: "Inter_700Bold" },
+  proRing: {
+    position: "absolute", top: 60, left: "50%", marginLeft: 20,
+    width: 22, height: 22, borderRadius: 11,
+    alignItems: "center", justifyContent: "center",
+    borderWidth: 2, borderColor: BG,
+  },
+  userName: { fontSize: 22, fontWeight: "700", color: TEXT, fontFamily: "Inter_700Bold", marginBottom: 4 },
+  userEmail: { fontSize: 13, color: MUTED, fontFamily: "Inter_400Regular", marginBottom: 12 },
+  planBadge: { flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 12, paddingVertical: 5, borderRadius: 20 },
+  planFree: { backgroundColor: "#F3F1ED", borderWidth: 1, borderColor: BORDER },
+  planPro: { backgroundColor: "#FFF5EA", borderWidth: 1, borderColor: "#FFE0B0" },
+  planText: { fontSize: 12, fontFamily: "Inter_600SemiBold" },
+  statsRow: {
+    flexDirection: "row", backgroundColor: CARD, borderRadius: 18,
+    borderWidth: 1, borderColor: BORDER, marginBottom: 16,
+    shadowColor: "#00000010", shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 1, shadowRadius: 8, elevation: 2, overflow: "hidden",
+  },
+  statCard: { flex: 1, alignItems: "center", paddingVertical: 18 },
+  statMiddle: { borderLeftWidth: 1, borderRightWidth: 1, borderColor: BORDER },
+  statValue: { fontSize: 24, fontWeight: "700", color: TEXT, fontFamily: "Inter_700Bold" },
+  statLabel: { fontSize: 12, color: DIM, fontFamily: "Inter_400Regular", marginTop: 2 },
+  creditsCard: {
+    backgroundColor: CARD, borderRadius: 16, padding: 16, marginBottom: 12,
+    borderWidth: 1, borderColor: BORDER,
+    shadowColor: "#00000010", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 1, shadowRadius: 8, elevation: 2,
+  },
+  creditsTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
+  creditsLeft: { flexDirection: "row", alignItems: "center", gap: 7 },
+  creditsLabel: { color: TEXT, fontFamily: "Inter_600SemiBold", fontSize: 14 },
+  creditsCount: { fontFamily: "Inter_600SemiBold", fontSize: 14 },
+  progressBg: { height: 6, backgroundColor: "#F3F1ED", borderRadius: 3, overflow: "hidden", marginBottom: 8 },
+  progressFill: { height: "100%", borderRadius: 3 },
+  creditsHint: { color: DIM, fontSize: 11, fontFamily: "Inter_400Regular" },
+  upgradeCard: { borderRadius: 18, overflow: "hidden", marginBottom: 24 },
+  upgradeGradient: { padding: 18, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  upgradeLeft: { flexDirection: "row", alignItems: "center", gap: 14, flex: 1 },
+  upgradeIconBg: {
+    width: 44, height: 44, borderRadius: 13,
+    backgroundColor: "rgba(255,255,255,0.25)", alignItems: "center", justifyContent: "center",
+  },
+  upgradeTitle: { fontSize: 16, fontWeight: "700", color: "#fff", fontFamily: "Inter_700Bold" },
+  upgradeDesc: { fontSize: 12, color: "rgba(255,255,255,0.8)", fontFamily: "Inter_400Regular", marginTop: 2 },
+  upgradeArrow: {
+    width: 34, height: 34, borderRadius: 10,
+    backgroundColor: "rgba(255,255,255,0.2)", alignItems: "center", justifyContent: "center",
+  },
+  section: { marginBottom: 20 },
+  sectionTitle: { fontSize: 12, color: DIM, fontFamily: "Inter_500Medium", marginBottom: 10, textTransform: "uppercase", letterSpacing: 0.8 },
+  menuItem: {
+    flexDirection: "row", alignItems: "center", backgroundColor: CARD,
+    borderRadius: 14, padding: 14, marginBottom: 6,
+    borderWidth: 1, borderColor: BORDER, gap: 12,
+    shadowColor: "#00000008", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 1, shadowRadius: 4, elevation: 1,
+  },
+  menuIconBg: {
+    width: 34, height: 34, borderRadius: 10,
+    backgroundColor: "#F3F1ED", alignItems: "center", justifyContent: "center",
+  },
+  menuText: { flex: 1 },
+  menuLabel: { fontSize: 14, color: TEXT, fontFamily: "Inter_500Medium" },
+  menuSub: { fontSize: 11, color: DIM, fontFamily: "Inter_400Regular", marginTop: 1 },
   appInfo: { alignItems: "center", gap: 2, marginBottom: 16 },
-  appInfoText: { color: "#555552", fontSize: 12, fontFamily: "Inter_400Regular" },
-  appVersion: { color: "#2A2A2A", fontSize: 11, fontFamily: "Inter_400Regular" },
-  logoutButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    backgroundColor: "#C0392B15",
-    borderRadius: 14,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: "#C0392B25",
+  appInfoText: { color: DIM, fontSize: 12, fontFamily: "Inter_400Regular" },
+  appVersion: { color: BORDER, fontSize: 11, fontFamily: "Inter_400Regular" },
+  logoutBtn: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
+    backgroundColor: "#FDF0F0", borderRadius: 14, padding: 16,
+    borderWidth: 1, borderColor: "#F5C6C6",
   },
   logoutText: { color: "#C0392B", fontSize: 15, fontFamily: "Inter_600SemiBold" },
 });

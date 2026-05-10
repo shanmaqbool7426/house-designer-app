@@ -1,17 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
 import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-  ActivityIndicator,
-  Alert,
-  ScrollView,
-  Animated,
-  Dimensions,
+  View, Text, TextInput, TouchableOpacity, StyleSheet,
+  KeyboardAvoidingView, Platform, ActivityIndicator, Alert,
+  ScrollView, Animated,
 } from "react-native";
 import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -19,7 +10,13 @@ import { Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useAuth } from "@/context/AuthContext";
 
-const { width } = Dimensions.get("window");
+const BG = "#F8F6F2";
+const CARD = "#FFFFFF";
+const BORDER = "#EDEAE4";
+const TEXT = "#1A1A18";
+const MUTED = "#6E6B67";
+const PLACEHOLDER = "#BBBAB6";
+const ACCENT = "#FF4C1E";
 
 export default function LoginScreen() {
   const insets = useSafeAreaInsets();
@@ -28,16 +25,15 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [emailFocused, setEmailFocused] = useState(false);
-  const [passwordFocused, setPasswordFocused] = useState(false);
+  const [focused, setFocused] = useState<string | null>(null);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(40)).current;
-  const logoScale = useRef(new Animated.Value(0.8)).current;
+  const slideAnim = useRef(new Animated.Value(30)).current;
+  const logoScale = useRef(new Animated.Value(0.85)).current;
 
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(fadeAnim, { toValue: 1, duration: 700, useNativeDriver: true }),
+      Animated.timing(fadeAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
       Animated.spring(slideAnim, { toValue: 0, friction: 8, tension: 50, useNativeDriver: true }),
       Animated.spring(logoScale, { toValue: 1, friction: 5, tension: 40, useNativeDriver: true }),
     ]).start();
@@ -61,9 +57,6 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.root}>
-      <View style={styles.bgDecor1} />
-      <View style={styles.bgDecor2} />
-
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
         <ScrollView
           contentContainerStyle={[styles.container, { paddingTop: insets.top + 48, paddingBottom: insets.bottom + 32 }]}
@@ -71,104 +64,84 @@ export default function LoginScreen() {
           showsVerticalScrollIndicator={false}
         >
           <Animated.View style={[styles.logoSection, { opacity: fadeAnim, transform: [{ scale: logoScale }] }]}>
-            <LinearGradient
-              colors={["#FF4C1E", "#FF8C00"]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.logoGradient}
-            >
-              <Feather name="home" size={34} color="#fff" />
+            <LinearGradient colors={["#FF4C1E", "#FF7A45"]} style={styles.logoGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+              <Feather name="home" size={30} color="#fff" />
             </LinearGradient>
             <Text style={styles.brand}>DesignAI</Text>
             <Text style={styles.tagline}>Transform your space with AI</Text>
           </Animated.View>
 
           <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
-            <Text style={styles.title}>Welcome back</Text>
-            <Text style={styles.subtitle}>Sign in to continue designing</Text>
+            <View style={styles.card}>
+              <Text style={styles.title}>Welcome back</Text>
+              <Text style={styles.subtitle}>Sign in to continue designing</Text>
 
-            <View style={styles.inputGroup}>
-              <View style={[styles.inputContainer, emailFocused && styles.inputFocused]}>
-                <Feather name="mail" size={18} color={emailFocused ? "#FF4C1E" : "#888884"} style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Email address"
-                  placeholderTextColor="#555552"
-                  value={email}
-                  onChangeText={setEmail}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                  onFocus={() => setEmailFocused(true)}
-                  onBlur={() => setEmailFocused(false)}
-                />
+              <View style={styles.inputGroup}>
+                <View style={[styles.inputWrap, focused === "email" && styles.inputWrapFocused]}>
+                  <Feather name="mail" size={16} color={focused === "email" ? ACCENT : PLACEHOLDER} style={styles.inputIcon} />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Email address"
+                    placeholderTextColor={PLACEHOLDER}
+                    value={email}
+                    onChangeText={setEmail}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    onFocus={() => setFocused("email")}
+                    onBlur={() => setFocused(null)}
+                  />
+                </View>
+                <View style={[styles.inputWrap, focused === "pw" && styles.inputWrapFocused]}>
+                  <Feather name="lock" size={16} color={focused === "pw" ? ACCENT : PLACEHOLDER} style={styles.inputIcon} />
+                  <TextInput
+                    style={[styles.input, { paddingRight: 40 }]}
+                    placeholder="Password"
+                    placeholderTextColor={PLACEHOLDER}
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry={!showPassword}
+                    autoCapitalize="none"
+                    onFocus={() => setFocused("pw")}
+                    onBlur={() => setFocused(null)}
+                  />
+                  <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeBtn}>
+                    <Feather name={showPassword ? "eye-off" : "eye"} size={16} color={PLACEHOLDER} />
+                  </TouchableOpacity>
+                </View>
               </View>
 
-              <View style={[styles.inputContainer, passwordFocused && styles.inputFocused]}>
-                <Feather name="lock" size={18} color={passwordFocused ? "#FF4C1E" : "#888884"} style={styles.inputIcon} />
-                <TextInput
-                  style={[styles.input, { paddingRight: 48 }]}
-                  placeholder="Password"
-                  placeholderTextColor="#555552"
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry={!showPassword}
-                  autoCapitalize="none"
-                  onFocus={() => setPasswordFocused(true)}
-                  onBlur={() => setPasswordFocused(false)}
-                />
-                <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeButton}>
-                  <Feather name={showPassword ? "eye-off" : "eye"} size={18} color="#555552" />
-                </TouchableOpacity>
-              </View>
+              <TouchableOpacity style={styles.btnWrap} onPress={handleLogin} disabled={loading} activeOpacity={0.85}>
+                <LinearGradient colors={loading ? ["#CCC", "#CCC"] : ["#FF4C1E", "#FF6B35"]} style={styles.btn} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
+                  {loading ? <ActivityIndicator color="#fff" /> : (
+                    <>
+                      <Text style={styles.btnText}>Sign In</Text>
+                      <Feather name="arrow-right" size={17} color="#fff" />
+                    </>
+                  )}
+                </LinearGradient>
+              </TouchableOpacity>
             </View>
-
-            <TouchableOpacity
-              style={styles.buttonWrap}
-              onPress={handleLogin}
-              disabled={loading}
-              activeOpacity={0.85}
-            >
-              <LinearGradient
-                colors={loading ? ["#666", "#666"] : ["#FF4C1E", "#FF6B35"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.button}
-              >
-                {loading ? (
-                  <ActivityIndicator color="#fff" />
-                ) : (
-                  <>
-                    <Text style={styles.buttonText}>Sign In</Text>
-                    <Feather name="arrow-right" size={18} color="#fff" />
-                  </>
-                )}
-              </LinearGradient>
-            </TouchableOpacity>
 
             <View style={styles.divider}>
               <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>New here?</Text>
+              <Text style={styles.dividerText}>New to DesignAI?</Text>
               <View style={styles.dividerLine} />
             </View>
 
-            <TouchableOpacity
-              onPress={() => router.push("/(auth)/register")}
-              style={styles.secondaryButton}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.secondaryButtonText}>Create Account</Text>
+            <TouchableOpacity onPress={() => router.push("/(auth)/register")} style={styles.secondaryBtn} activeOpacity={0.8}>
+              <Text style={styles.secondaryBtnText}>Create Free Account</Text>
             </TouchableOpacity>
 
-            <View style={styles.featureRow}>
+            <View style={styles.pillsRow}>
               {[
                 { icon: "zap" as const, text: "10 free credits" },
                 { icon: "heart" as const, text: "Save designs" },
-                { icon: "cpu" as const, text: "AI-powered" },
+                { icon: "cpu" as const, text: "Claude AI" },
               ].map(({ icon, text }) => (
-                <View key={text} style={styles.featurePill}>
-                  <Feather name={icon} size={11} color="#FF8C00" />
-                  <Text style={styles.featurePillText}>{text}</Text>
+                <View key={text} style={styles.pill}>
+                  <Feather name={icon} size={11} color={ACCENT} />
+                  <Text style={styles.pillText}>{text}</Text>
                 </View>
               ))}
             </View>
@@ -180,102 +153,57 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: "#0D0D0D" },
-  bgDecor1: {
-    position: "absolute",
-    width: 280,
-    height: 280,
-    borderRadius: 140,
-    backgroundColor: "#FF4C1E",
-    opacity: 0.06,
-    top: -80,
-    right: -80,
-  },
-  bgDecor2: {
-    position: "absolute",
-    width: 180,
-    height: 180,
-    borderRadius: 90,
-    backgroundColor: "#FF8C00",
-    opacity: 0.05,
-    bottom: 120,
-    left: -60,
-  },
-  container: { flexGrow: 1, paddingHorizontal: 28 },
-  logoSection: { alignItems: "center", marginBottom: 52 },
+  root: { flex: 1, backgroundColor: BG },
+  container: { flexGrow: 1, paddingHorizontal: 24 },
+  logoSection: { alignItems: "center", marginBottom: 40 },
   logoGradient: {
-    width: 76,
-    height: 76,
-    borderRadius: 22,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 18,
-    shadowColor: "#FF4C1E",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 20,
-    elevation: 12,
+    width: 72, height: 72, borderRadius: 22,
+    alignItems: "center", justifyContent: "center",
+    marginBottom: 16,
+    shadowColor: "#FF4C1E", shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3, shadowRadius: 16, elevation: 8,
   },
-  brand: {
-    fontSize: 30,
-    fontWeight: "700",
-    color: "#F5F5F0",
-    letterSpacing: -1,
-    fontFamily: "Inter_700Bold",
-    marginBottom: 6,
+  brand: { fontSize: 28, fontWeight: "700", color: TEXT, letterSpacing: -0.5, fontFamily: "Inter_700Bold", marginBottom: 4 },
+  tagline: { fontSize: 14, color: MUTED, fontFamily: "Inter_400Regular" },
+  card: {
+    backgroundColor: CARD, borderRadius: 20, padding: 24, marginBottom: 20,
+    shadowColor: "#00000018", shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 1, shadowRadius: 16, elevation: 4,
+    borderWidth: 1, borderColor: BORDER,
   },
-  tagline: { fontSize: 14, color: "#555552", fontFamily: "Inter_400Regular" },
-  title: { fontSize: 26, fontWeight: "700", color: "#F5F5F0", fontFamily: "Inter_700Bold", marginBottom: 6 },
-  subtitle: { fontSize: 15, color: "#888884", fontFamily: "Inter_400Regular", marginBottom: 32 },
-  inputGroup: { gap: 14, marginBottom: 24 },
-  inputContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#161616",
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: "#242424",
-    paddingHorizontal: 16,
-    height: 56,
+  title: { fontSize: 22, fontWeight: "700", color: TEXT, fontFamily: "Inter_700Bold", marginBottom: 4 },
+  subtitle: { fontSize: 14, color: MUTED, fontFamily: "Inter_400Regular", marginBottom: 24 },
+  inputGroup: { gap: 12, marginBottom: 20 },
+  inputWrap: {
+    flexDirection: "row", alignItems: "center",
+    backgroundColor: "#F8F6F2", borderRadius: 12,
+    borderWidth: 1.5, borderColor: BORDER,
+    paddingHorizontal: 14, height: 52,
   },
-  inputFocused: { borderColor: "#FF4C1E", backgroundColor: "#1A1A1A" },
-  inputIcon: { marginRight: 12 },
-  input: { flex: 1, color: "#F5F5F0", fontSize: 15, fontFamily: "Inter_400Regular" },
-  eyeButton: { position: "absolute", right: 16 },
-  buttonWrap: { borderRadius: 14, overflow: "hidden", marginBottom: 20 },
-  button: {
-    height: 56,
-    alignItems: "center",
-    justifyContent: "center",
-    flexDirection: "row",
-    gap: 10,
-  },
-  buttonText: { color: "#fff", fontSize: 16, fontWeight: "700", fontFamily: "Inter_700Bold" },
+  inputWrapFocused: { borderColor: ACCENT, backgroundColor: "#FFF5F2" },
+  inputIcon: { marginRight: 10 },
+  input: { flex: 1, color: TEXT, fontSize: 15, fontFamily: "Inter_400Regular" },
+  eyeBtn: { position: "absolute", right: 14 },
+  btnWrap: { borderRadius: 14, overflow: "hidden" },
+  btn: { height: 52, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8 },
+  btnText: { color: "#fff", fontSize: 16, fontFamily: "Inter_700Bold" },
   divider: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 16 },
-  dividerLine: { flex: 1, height: 1, backgroundColor: "#242424" },
-  dividerText: { color: "#555552", fontSize: 13, fontFamily: "Inter_400Regular" },
-  secondaryButton: {
-    height: 54,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: "#2A2A2A",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 28,
-    backgroundColor: "#161616",
+  dividerLine: { flex: 1, height: 1, backgroundColor: BORDER },
+  dividerText: { color: MUTED, fontSize: 13, fontFamily: "Inter_400Regular" },
+  secondaryBtn: {
+    height: 52, borderRadius: 14, borderWidth: 1.5, borderColor: BORDER,
+    alignItems: "center", justifyContent: "center",
+    backgroundColor: CARD, marginBottom: 28,
+    shadowColor: "#00000010", shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 1, shadowRadius: 8, elevation: 2,
   },
-  secondaryButtonText: { color: "#F5F5F0", fontSize: 15, fontFamily: "Inter_600SemiBold" },
-  featureRow: { flexDirection: "row", justifyContent: "center", gap: 10, flexWrap: "wrap" },
-  featurePill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    backgroundColor: "#1A1A1A",
-    borderRadius: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderWidth: 1,
-    borderColor: "#2A2A2A",
+  secondaryBtnText: { color: TEXT, fontSize: 15, fontFamily: "Inter_600SemiBold" },
+  pillsRow: { flexDirection: "row", justifyContent: "center", gap: 8, flexWrap: "wrap" },
+  pill: {
+    flexDirection: "row", alignItems: "center", gap: 5,
+    backgroundColor: CARD, borderRadius: 20,
+    paddingHorizontal: 10, paddingVertical: 6,
+    borderWidth: 1, borderColor: BORDER,
   },
-  featurePillText: { color: "#888884", fontSize: 11, fontFamily: "Inter_400Regular" },
+  pillText: { color: MUTED, fontSize: 11, fontFamily: "Inter_400Regular" },
 });
